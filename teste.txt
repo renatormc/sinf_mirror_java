@@ -1,0 +1,6 @@
+Marque a errada em relação aos procedimentos de autorização de tráfego.
+
+a) Por ser a torre subordinada ao ACC que é o orgão responsável por autorizar voos na FIR o ACC pode, caso julgue necessário, cancelar FPL mas não RPL (item 2.3.5)
+b) Todas as autorizações emitidas pela TWR-GO ficarão sujeitas às modificações decorrentes das necessidades técnicas e/ou operacionais do ACC-BS. item 2.3.6
+c) Poderá ser utilizada a expressão "Rota do Plano de Voo" em autorizaçõs de tráfego. (2.3.4 nota)
+d) Caso o tráfego VFR pretenda voar além dos limites da TMA-AN e o sistema designar um código transponder da família 4XXX, a TWR poderá atribuí-lo sem efetuar contato com o ACC. (2.3.7)
