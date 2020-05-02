@@ -1,6 +1,7 @@
 package go.sptc.sinf.app;
 
 import java.math.BigInteger;
+import java.nio.file.Paths;
 import java.time.Duration;
 
 import org.apache.commons.io.FileUtils;
@@ -42,9 +43,9 @@ public class App {
 
         Synchronizer synchronizer = new Synchronizer();
         for (String source : ns.<String>getList("source")) {
-            synchronizer.sources.add(source);
+            synchronizer.sources.add(Paths.get(source));
         }
-        synchronizer.dest = ns.getString("dest");
+        synchronizer.dest = Paths.get(ns.getString("dest"));
         synchronizer.nWorkers = ns.getInt("workers");
         synchronizer.threshold = ns.getLong("threshold") * 1048576;
         synchronizer.bufferSize = ns.getLong("buffer") * 1048576;

@@ -83,10 +83,31 @@ public class Synchronizer implements Runnable {
 
         try {
             Files.list(path).forEach(item -> {
+                Path rel = source.relativize(item);
                 if (Files.isDirectory(item)) {
-                   relPath = source.relativize(item);
-                } else {
-                  
+                   Path destPath = dest.resolve(rel);
+
+                   //Cria o diretório no destino caso ainda não exista
+                   if(!Files.exists(destPath)){
+                        if(verbose){
+                            System.out.printf("Nova pasta %s\n", dest.toAbsolutePath().toString());
+                        }
+                        try {
+                            Files.createDirectories(destPath);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            System.exit(1);
+                        }
+                   }
+
+                   if (purge) {
+                     purgeItems(destPath);  
+                   }
+
+                   update(item);
+
+                } else if (!autoFind || item.getFileName().toString() == ".sinf_mark.json"){
+                    JobConfig jobConfig = new JobConfig(rel, Files.size(item) > threshold);
                 }
             });
         } catch (IOException e) {
