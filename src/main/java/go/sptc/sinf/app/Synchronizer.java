@@ -1,120 +1,109 @@
 package go.sptc.sinf.app;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.SynchronousQueue;
 
-
-public class Synchronizer {
-    public long totalSize;
-    public long totalNumber;
-    public long currentNumber;
-    public long currentSize;
+public class Synchronizer implements Runnable {
+    public boolean autoFind;
+    public List<Path> sources;
     public Path source;
     public Path dest;
+    public boolean verbose;
+    public long nWorkers;
+    public long threshold;
+    public long thresholdChunk;
+    public long bufferSize;
+    public boolean purge;
+    public int retries;
+    public Duration wait;
+    private List<Thread> threads;
+    private SynchronousQueue<JobConfig> jobs;
+    private SynchronousQueue<ResultData> results;
 
-    public void setSource(String source) {
-        this.source = Paths.get(source);
+    public Synchronizer() {
+        this.sources = new ArrayList<Path>();
+        this.jobs = new SynchronousQueue<>();
+        this.results = new SynchronousQueue<>();
     }
 
-    public void setDest(String dest) {
-        this.dest = Paths.get(dest);
-    }
+    public void run() {
+        SynchronousQueue<Boolean> acknowledgeDone = new SynchronousQueue<>();
 
-    public void sync(String path) {
-
-        File root = new File(path);
-        File[] list = root.listFiles();
-
-        if (list == null)
-            return;
-
-        for (File f : list) {
-            if (f.isDirectory()) {
-                sync(f.getAbsolutePath());
-            } else {
-                System.out.println("File:" + f.getAbsoluteFile());
+        // Cria pasta destino se ela não existir
+        if (!Files.exists(dest)) {
+            try {
+                Files.createDirectories(dest);
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.exit(1);
             }
         }
-    }
 
-    public void countFiles() {
-        totalNumber = 0;
-        totalSize = 0;
-        countFiles(source);
-    }
-
-    public void countFiles(Path path) {
-
-        File root = path.toFile();
-        File[] list = root.listFiles();
-
-        if (list == null)
-            return;
-
-        for (File f : list) {
-            if (f.isDirectory()) {
-                countFiles(Paths.get(f.getAbsolutePath()));
-            } else {
-                totalNumber += 1;
-                totalSize += f.length();
+        for (Path source : sources) {
+            this.source = source;
+            threads = new ArrayList<Thread>();
+            for (int i = 1; i <= this.nWorkers; i++) {
+                Thread thread = new Thread(new Worker(jobs, results, i));
+                threads.add(thread);
+                thread.start();
             }
 
-        }
-    }
+            update(source);
 
-    public void copyFile(File in, File out) throws IOException {
-
-        InputStream is = null;
-        OutputStream os = null;
-        try {
-            is = new FileInputStream(in);
-            os = new FileOutputStream(out);
-            byte[] buffer = new byte[1024];
-            int length;
-            while ((length = is.read(buffer)) > 0) {
-                os.write(buffer, 0, length);
-            }
-            currentNumber += 1;
-            currentSize += in.length();
-        } finally {
-            is.close();
-            os.close();
-        }
-    }
-
-    public void update(){
-        update(source);
-    }
-
-    public void update(Path path){
-       
-        File[] list = path.toFile().listFiles();
-        Path relativePath = null;
-        Path sourcePath = null;
-        Path destPath = null;
-
-        if (list == null)
-            return;
-
-        for (File f : list) {
-            relativePath = path.relativize(source);
-            destPath = dest.resolve(relativePath);
-            if (f.isDirectory()) {
-                if(destPath.e){
-
+            // Aguarda todas as threads terminarem
+            for (Thread thread : threads) {
+                try {
+                    thread.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    System.exit(1);
                 }
-            } else {
-                totalNumber += 1;
-                totalSize += f.length();
             }
-
         }
+
+        ResultData data = new ResultData();
+        data.action = "finish";
+        results.add(data);
+    }
+
+    private void update(Path path) {
+        Path relPath;
+        Path destAbsolutePath;
+
+        if (purge) {
+            relPath = source.relativize(path);
+            destAbsolutePath = dest.resolve(relPath);
+            purgeItems(destAbsolutePath);
+        }
+
+        try {
+            Files.list(path).forEach(item -> {
+                if (Files.isDirectory(item)) {
+                   relPath = source.relativize(item);
+                } else {
+                  
+                }
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void copyFile(Path source, Path dest, ResultData resultaData) {
+
+    }
+
+    private void purgeItems(Path path) {
+
+    }
+
+    private void copyOrReplace(Path relPath) {
+
     }
 
 }
